@@ -1,0 +1,18 @@
+# 构建产物
+bin/
+obj/
+publish/
+artifacts/
+
+# Visual Studio / Rider / VS Code 本地状态
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.userprefs
+*.DotSettings.user
+
+# 诊断输出
+crash.log
+binding.log

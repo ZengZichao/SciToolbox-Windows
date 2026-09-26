@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>SciToolbox</AssemblyName>
+    <RootNamespace>SciToolbox</RootNamespace>
+
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <!-- exe 右键属性中显示的文件信息 -->
+    <AssemblyTitle>SciToolbox - 科研数据检索工具箱</AssemblyTitle>
+    <Product>SciToolbox</Product>
+    <Description>原生 WPF 桌面应用，聚合 15 个公开学术数据库的一站式检索工具。</Description>
+    <Company>SciToolbox</Company>
+    <Copyright>Copyright © 2026 SciToolbox. 本软件以 GNU GPL-3.0 协议发布。</Copyright>
+    <NeutralLanguage>zh-Hans</NeutralLanguage>
+    <ApplicationIcon>Resources\AppIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 窗口标题栏 / 任务栏 / 应用内品牌标识共用同一份图标资源 -->
+    <Resource Include="Resources\AppIcon.ico" />
+  </ItemGroup>
+
+</Project>

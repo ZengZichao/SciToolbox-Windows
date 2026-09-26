@@ -1,0 +1,57 @@
+<UserControl x:Class="SciToolbox.Views.CompareHostControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:SciToolbox.Views">
+    <ScrollViewer Background="{DynamicResource Brush.Window}">
+        <StackPanel>
+            <Border Padding="20,12" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,0,1">
+                <TextBlock Text="{Binding DataContext.CompareHint, RelativeSource={RelativeSource AncestorType=Window}}"
+                           Style="{StaticResource CaptionText}"/>
+            </Border>
+            <ItemsControl x:Name="Columns" Margin="20,16">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="240" Margin="0,0,12,12" Style="{StaticResource Card}">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Brush.Divider}"
+                                        BorderThickness="0,0,0,1" Padding="12,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding ToolName}" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Brush.Ink}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Style="{StaticResource IconButton}"
+                                                Command="{Binding RemoveCommand}" views:A11y.Name="{Binding RemoveTip}">
+                                            <TextBlock Style="{StaticResource GlyphText}" FontSize="12" Text="&#xE711;"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding Fields}" Margin="12,8">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,4">
+                                                    <TextBlock Text="{Binding Label}" Style="{StaticResource CaptionText}"/>
+                                                    <TextBox Style="{StaticResource SelectableText}" Text="{Binding Value}"
+                                                             FontSize="12" IsReadOnly="True"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

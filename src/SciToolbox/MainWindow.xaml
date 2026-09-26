@@ -1,0 +1,524 @@
+<Window x:Class="SciToolbox.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:SciToolbox.ViewModels"
+        xmlns:views="clr-namespace:SciToolbox.Views"
+        xmlns:conv="clr-namespace:SciToolbox.Views"
+        Title="SciToolbox" Icon="/Resources/AppIcon.ico"
+        Height="760" Width="1280" MinHeight="520" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Brush.Window}"
+        TextOptions.TextFormattingMode="Ideal" UseLayoutRounding="True"
+        TextElement.FontFamily="Segoe UI, Microsoft YaHei UI"
+        KeyboardNavigation.TabNavigation="Cycle">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="B2V"/>
+        <conv:BoolToVisibilityConverter x:Key="InvB2V" Invert="True"/>
+        <conv:StringToVisibilityConverter x:Key="S2V"/>
+                    <conv:CollectionToVisibilityConverter x:Key="C2V"/>
+    
+        <!-- ============ 侧边栏条目 ============ -->
+        <DataTemplate x:Key="SidebarItemTemplate" DataType="{x:Type vm:SidebarItemVm}">
+            <!-- 分组标题 -->
+            <Grid>
+                <Border Background="Transparent" Cursor="Hand"
+                        Visibility="{Binding IsHeader, Converter={StaticResource B2V}}"
+                        MouseLeftButtonUp="HeaderClick">
+                    <Grid Margin="12,10,10,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <Border Background="{Binding Color}" CornerRadius="4" Width="16" Height="16"
+                                    Opacity="0.16" VerticalAlignment="Center"
+                                    Visibility="{Binding Badge, Converter={StaticResource S2V}}"/>
+                            <TextBlock Text="{Binding Badge}" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{Binding Color}" Width="16" Margin="-16,0,0,0"
+                                       TextAlignment="Center" TextWrapping="NoWrap" VerticalAlignment="Center"
+                                       Visibility="{Binding Badge, Converter={StaticResource S2V}}"/>
+                            <TextBlock Text="{Binding Text}" FontSize="11" Foreground="{DynamicResource Brush.Ink3}"
+                                       Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                        </StackPanel>
+                        <!-- 折叠箭头：随分组展开 / 收起状态旋转 -->
+                        <TextBlock Grid.Column="1" Text="&#xE70D;" Style="{StaticResource GlyphText}"
+                                   FontSize="9" RenderTransformOrigin="0.5,0.5"
+                                   Foreground="{DynamicResource Brush.Ink4}" Margin="0,1,2,0">
+                            <TextBlock.RenderTransform>
+                                <RotateTransform Angle="{Binding ChevronAngle}"/>
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+
+                <!-- 工具 / 页签项 -->
+                <Border x:Name="itemBg" CornerRadius="6" Margin="6,1" Background="Transparent"
+                        Visibility="{Binding IsHeader, Converter={StaticResource InvB2V}}">
+                    <Button Command="{Binding SelectCommand}" Style="{StaticResource GhostButton}" Padding="0"
+                            HorizontalContentAlignment="Stretch"
+                            AutomationProperties.Name="{Binding Text}">
+                        <Grid Height="{DynamicResource Density.RowHeight}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" CornerRadius="1.5" Background="{Binding Color}" Margin="0,4"
+                                    Visibility="{Binding IsSelected, Converter={StaticResource B2V}}"/>
+                            <Border x:Name="selBg" Grid.Column="0" Grid.ColumnSpan="3" CornerRadius="6"
+                                    Background="{Binding Color}" Opacity="0.12"
+                                    Visibility="{Binding IsSelected, Converter={StaticResource B2V}}"/>
+                            <Border Grid.Column="1" Width="20" Height="20"
+                                    Margin="{Binding IndentThickness}" Background="Transparent">
+                                <TextBlock Text="{Binding Glyph}" Style="{StaticResource GlyphText}"
+                                           FontSize="{DynamicResource Density.IconSize}"
+                                           Foreground="{Binding Color}"/>
+                            </Border>
+                            <TextBlock Grid.Column="2" Text="{Binding Text}"
+                                       FontSize="{DynamicResource Density.FontSize}" Margin="8,0,10,0"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap" Foreground="{DynamicResource Brush.Ink2}"/>
+                        </Grid>
+                    </Button>
+                </Border>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="itemBg" Property="Background" Value="Transparent"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ChildrenVisible}" Value="False">
+                    <Setter TargetName="itemBg" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- ============ 首页 ============ -->
+        <DataTemplate DataType="{x:Type vm:HomeVm}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
+                <StackPanel Margin="28,20,28,40">
+                    <TextBlock Text="{Binding Subtitle}" Style="{StaticResource SmallText}" Margin="0,6,0,20"/>
+
+                    <!-- 智能识别 -->
+                    <TextBlock Text="{Binding QuickStart}" Style="{StaticResource SectionHeaderText}" Margin="0,0,0,6"/>
+                    <Border Style="{StaticResource Card}" Padding="12">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="{Binding IdentifyLabel}" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding IdentifyCommand}" Margin="8,0,0,0"/>
+                            <TextBox Tag="MainSearch" Style="{StaticResource SearchBox}" BorderThickness="0"
+                                     Background="Transparent" views:Placeholder.Text="{Binding SmartFieldPlaceholder}"
+                                     Text="{Binding SmartIdentifyText, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding IdentifyCommand}"/>
+                                </TextBox.InputBindings>
+                            </TextBox>
+                        </DockPanel>
+                    </Border>
+                    <TextBlock Text="{Binding SmartIdentifyDesc}" Style="{StaticResource CaptionText}" Margin="2,6,0,0"/>
+
+                    <!-- 全库搜索 -->
+                    <TextBlock Text="{Binding GlobalSearchLabel}" Style="{StaticResource SectionHeaderText}" Margin="0,18,0,6"/>
+                    <Border Style="{StaticResource Card}" Padding="12">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="{Binding GlobalSearchLabel}" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding GlobalSearchCommand}" Margin="8,0,0,0"/>
+                            <TextBox Style="{StaticResource SearchBox}" BorderThickness="0" Background="Transparent"
+                                     views:Placeholder.Text="{Binding GlobalSearchDesc}"
+                                     Text="{Binding GlobalQuery, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBox.InputBindings>
+                                    <!-- 回车直接触发全库检索 -->
+                                    <KeyBinding Key="Enter" Command="{Binding GlobalSearchCommand}"/>
+                                </TextBox.InputBindings>
+                            </TextBox>
+                        </DockPanel>
+                    </Border>
+                    <TextBlock Text="{Binding GlobalSearchDesc}" Style="{StaticResource CaptionText}" Margin="2,6,0,0"/>
+
+                    <!-- 收藏入口（有收藏时才出现） -->
+                    <Border Style="{StaticResource Card}" Padding="12" Margin="0,18,0,0"
+                            Visibility="{Binding HasFavorites, Converter={StaticResource B2V}}">
+                        <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Stretch" Padding="0"
+                                Command="{Binding OpenFavoritesCommand}" views:A11y.Name="{Binding FavoritesLabel}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE734;" Style="{StaticResource GlyphText}"
+                                           Foreground="{DynamicResource Brush.Accent}"/>
+                                <TextBlock Text="{Binding FavoritesLabel}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding FavoritesCount}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Brush.Accent}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- 最近查询 -->
+                    <StackPanel Margin="0,18,0,0" Visibility="{Binding HasRecent, Converter={StaticResource B2V}}">
+                        <TextBlock Text="{Binding RecentLabel}" Style="{StaticResource CaptionText}" Margin="0,0,0,8"/>
+                        <ItemsControl ItemsSource="{Binding RecentQueries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Stretch" Padding="8,5"
+                                            Command="{Binding DataContext.OpenRecentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE81C;" Style="{StaticResource GlyphText}" FontSize="11"
+                                                       Foreground="{DynamicResource Brush.Ink3}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Query}" FontSize="12" Foreground="{DynamicResource Brush.Ink2}"
+                                                       Margin="8,0,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                                            <TextBlock Text="{Binding ToolName}" FontSize="11" Foreground="{DynamicResource Brush.Ink3}"
+                                                       Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- 分类浏览 -->
+                    <TextBlock Text="{Binding BrowseLabel}" Style="{StaticResource CaptionText}" Margin="0,18,0,8"/>
+                    <ItemsControl ItemsSource="{Binding Categories}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,16">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Border Background="{Binding Brush}" CornerRadius="4" Width="16" Height="16">
+                                            <TextBlock Text="{Binding Abbrev}" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Brush.OnAccent}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding Name}" FontSize="11" Foreground="{DynamicResource Brush.Ink3}"
+                                                   Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Tools}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding SelectCommand}" Style="{StaticResource SecondaryButton}"
+                                                        Margin="0,0,8,8" Padding="10,8" AutomationProperties.Name="{Binding Name}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource GlyphText}" FontSize="13"
+                                                                   Foreground="{Binding Brush}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Name}" FontSize="12" Margin="7,0,0,0"
+                                                                   VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Border Style="{StaticResource Card}" Padding="12" Margin="0,8,0,0" Background="Transparent" BorderThickness="0">
+                        <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap">
+                            <Run Text="Ctrl+K"/><Run Text="  " /><Run Text="{Binding CmdKDesc, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+    </Window.Resources>
+
+    <!-- ===== 根布局 ===== -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 离线横幅 -->
+        <Border Grid.Row="0" Background="{DynamicResource Brush.WarningBanner}"
+                Visibility="{Binding IsOffline, Converter={StaticResource B2V}}" Padding="0,6">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="&#xE8CD;" Style="{StaticResource GlyphText}" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding OfflineText}" Foreground="White" FontSize="12" Margin="6,0,0,0" TextWrapping="NoWrap"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 顶部工具条：返回 / 面包屑 / 侧边栏开关 / 命令面板 / 快捷键 -->
+        <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,0,1"
+                Background="{DynamicResource Brush.Sidebar}" Padding="8,4">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Style="{StaticResource IconButton}" Command="{Binding ShowCommandPaletteCommand}"
+                            views:A11y.Name="{Binding PaletteTip}" ToolTip="Ctrl+K">
+                        <TextBlock Style="{StaticResource GlyphText}" Text="&#xE721;"/>
+                    </Button>
+                    <Button Style="{StaticResource IconButton}" Command="{Binding ShowShortcutsCommand}"
+                            views:A11y.Name="{Binding ShortcutsTip}" ToolTip="Ctrl+/">
+                        <TextBlock Style="{StaticResource GlyphText}" Text="&#xE8FD;"/>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <!-- 侧边栏开合 -->
+                    <Button Style="{StaticResource IconButton}" Command="{Binding ToggleSidebarCommand}"
+                            views:A11y.Name="{Binding SidebarTip}" ToolTip="Ctrl+\">
+                        <TextBlock Style="{StaticResource GlyphText}" Text="&#xE700;"/>
+                    </Button>
+                    <Button Style="{StaticResource IconButton}" Command="{Binding GoBackCommand}"
+                            views:A11y.Name="{Binding BackTip}" Margin="2,0,0,0"
+                            Visibility="{Binding HasBreadcrumb, Converter={StaticResource B2V}}">
+                        <TextBlock Style="{StaticResource GlyphText}" Text="&#xE72B;"/>
+                    </Button>
+                    <ItemsControl ItemsSource="{Binding Breadcrumb}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                  Visibility="{Binding HasBreadcrumb, Converter={StaticResource B2V}}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE76C;" Style="{StaticResource GlyphText}" FontSize="9"
+                                               Foreground="{DynamicResource Brush.Ink4}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource CaptionText}"
+                                               Margin="4,0,4,0" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <!-- 限流排队 / 命中缓存提示 -->
+                    <Border Style="{StaticResource Chip}" Background="{DynamicResource Brush.AccentTint}" Margin="10,0,0,0"
+                            Visibility="{Binding CacheHint, Converter={StaticResource B2V}}" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CacheHintText}" Style="{StaticResource CaptionText}"
+                                   Foreground="{DynamicResource Brush.Accent}" TextWrapping="NoWrap"/>
+                    </Border>
+                    <Border Style="{StaticResource Chip}" Background="{DynamicResource Brush.AccentTint}" Margin="6,0,0,0"
+                            Visibility="{Binding ThrottleHint, Converter={StaticResource B2V}}" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ThrottleHintText}" Style="{StaticResource CaptionText}"
+                                   Foreground="{DynamicResource Brush.SemanticWarning}" TextWrapping="NoWrap"/>
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 三栏 -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="248" MinWidth="0"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="420" MinWidth="280"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="360"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 侧边栏 -->
+            <Border Grid.Column="0" Background="{DynamicResource Brush.Sidebar}"
+                    BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,1,0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SidebarVisible}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="16,16,10,12">
+                        <!-- 与 exe / 快捷方式 / 任务栏同一份图标，保证应用内外标识一致 -->
+                        <Image Source="/Resources/AppIcon.ico" Width="24" Height="24"
+                               RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+                        <TextBlock Text="SciToolbox" FontSize="14" FontWeight="SemiBold" Margin="9,0,0,0"
+                                   VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding SidebarItems}"
+                                      ItemTemplate="{StaticResource SidebarItemTemplate}"
+                                      Margin="0,0,0,20"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- 侧边栏分隔条：收起时不再占据可拖拽的区域 -->
+            <GridSplitter Grid.Column="1" Width="1" Background="{DynamicResource Brush.Divider}"
+                          HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"
+                          Visibility="{Binding SidebarVisible, Converter={StaticResource B2V}}"/>
+
+            <!-- 中栏 -->
+            <Grid Grid.Column="2" Background="{DynamicResource Brush.Window}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Margin="20,14,20,8">
+                    <TextBlock Text="{Binding ContentTitle}" Style="{StaticResource HeadlineText}"/>
+                    <TextBlock Text="{Binding ContentSubtitle}" Style="{StaticResource CaptionText}" Margin="0,2,0,0"
+                               Visibility="{Binding ContentSubtitle, Converter={StaticResource S2V}}"/>
+                </StackPanel>
+                <ContentControl Grid.Row="1" Content="{Binding Content}" HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch"/>
+            </Grid>
+
+            <GridSplitter Grid.Column="3" Width="1" Background="{DynamicResource Brush.Divider}"
+                          HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"/>
+
+            <!-- 右栏：详情 -->
+            <Border Grid.Column="4" Background="{DynamicResource Brush.Window}"
+                    BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="1,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 对比工具栏 -->
+                    <Border Grid.Row="0" Background="{DynamicResource Brush.Sidebar}" Padding="20,8"
+                            BorderBrush="{DynamicResource Brush.DividerSoft}" BorderThickness="0,0,0,1"
+                            Visibility="{Binding HasCompareItems, Converter={StaticResource B2V}}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="{Binding ClearCompareLabel}" Style="{StaticResource GhostButton}"
+                                    Command="{Binding ClearCompareCommand}" FontSize="12"/>
+                            <Button DockPanel.Dock="Right" Content="{Binding CompareModeLabel}" Style="{StaticResource GhostButton}"
+                                    Command="{Binding ToggleCompareModeCommand}" FontSize="12"
+                                    Foreground="{DynamicResource Brush.Accent}" Margin="0,0,6,0"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CompareLabel}" Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding CompareCount}" Foreground="{DynamicResource Brush.Accent}"
+                                           FontWeight="SemiBold" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- 详情导航条：上一条 / 下一条 / 重试，快捷键说明里承诺了但没有入口 -->
+                    <Border Grid.Row="1" Padding="16,6" BorderBrush="{DynamicResource Brush.DividerSoft}" BorderThickness="0,0,0,1">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasDetailState}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Style="{StaticResource IconButton}" Command="{Binding DetailPrevCommand}"
+                                        views:A11y.Name="{Binding PrevDetailTip}">
+                                    <TextBlock Style="{StaticResource GlyphText}" Text="&#xE76B;"/>
+                                </Button>
+                                <Button Style="{StaticResource IconButton}" Command="{Binding DetailNextCommand}"
+                                        views:A11y.Name="{Binding NextDetailTip}">
+                                    <TextBlock Style="{StaticResource GlyphText}" Text="&#xE76C;"/>
+                                </Button>
+                            </StackPanel>
+                            <TextBlock Text="{Binding DetailHeaderTitle}" Style="{StaticResource CaptionText}"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        </DockPanel>
+                    </Border>
+
+                    <Grid Grid.Row="2">
+                        <!-- 详情本体 -->
+                        <ContentControl Content="{Binding CurrentDetail}" HorizontalContentAlignment="Stretch"
+                                        Visibility="{Binding ShowSingleDetail, Converter={StaticResource B2V}}"/>
+
+                        <!-- 空态引导 -->
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420"
+                                    Margin="28,0"
+                                    Visibility="{Binding ShowDetailEmptyGuidance, Converter={StaticResource B2V}}">
+                            <TextBlock Style="{StaticResource GlyphText}" FontSize="30" Text="&#xE7F3;"
+                                       Foreground="{DynamicResource Brush.Ink4}"/>
+                            <TextBlock Text="{Binding EmptyGuidanceText}" Style="{StaticResource EmptyStateText}"
+                                       FontSize="13" Margin="0,12,0,0"/>
+                        </StackPanel>
+
+                        <!-- 详情加载失败 -->
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420"
+                                    Margin="28,0"
+                                    Visibility="{Binding HasDetailError, Converter={StaticResource B2V}}">
+                            <TextBlock Style="{StaticResource GlyphText}" FontSize="28" Text="&#xE783;"
+                                       Foreground="{DynamicResource Brush.SemanticError}"/>
+                            <TextBlock Text="{Binding DetailErrorText}" Style="{StaticResource SmallText}"
+                                       TextAlignment="Center" Margin="0,10,0,0"/>
+                            <Button Content="{Binding RetryLabel}" Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding RetryDetailCommand}" HorizontalAlignment="Center"
+                                    Margin="0,14,0,0"/>
+                        </StackPanel>
+
+                        <!-- 对比视图 -->
+                        <ContentControl Visibility="{Binding ShowCompareView, Converter={StaticResource B2V}}"
+                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                            <views:CompareHostControl/>
+                        </ContentControl>
+
+                        <!-- 加载遮罩 -->
+                        <Grid Visibility="{Binding DetailLoading, Converter={StaticResource B2V}}">
+                            <Border Background="{DynamicResource Brush.Window}" Opacity="0.55"/>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <ProgressBar IsIndeterminate="True" Style="{StaticResource ThinProgress}" Width="140"/>
+                                <TextBlock Text="{Binding LoadingDetailText}" Style="{StaticResource CaptionText}"
+                                           HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ===== 覆盖层：命令面板 / 弹窗 / Toast ===== -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="10">
+            <!-- 只要有弹窗打开，就整层拦截鼠标，避免点到底下的结果行 -->
+            <Border Background="#22000000"
+                    Visibility="{Binding AnyOverlayVisible, Converter={StaticResource B2V}}"/>
+
+            <!-- 命令面板遮罩 -->
+            <Border Background="#22000000" MouseLeftButtonUp="ScrimClick" Tag="palette"
+                    Visibility="{Binding CommandPaletteVisible, Converter={StaticResource B2V}}"/>
+            <Border Width="480" MaxHeight="420" VerticalAlignment="Top" Margin="0,110,0,0"
+                    Style="{StaticResource Card}" BorderBrush="{DynamicResource Brush.LineStrong}"
+                    Visibility="{Binding CommandPaletteVisible, Converter={StaticResource B2V}}">
+                <views:CommandPaletteControl/>
+            </Border>
+
+            <!-- 智能路由弹窗 -->
+            <Border Background="#22000000" MouseLeftButtonUp="ScrimClick" Tag="route"
+                    Visibility="{Binding RouteVisible, Converter={StaticResource B2V}}"/>
+            <Border Width="460" VerticalAlignment="Center" Style="{StaticResource Card}"
+                    Visibility="{Binding RouteVisible, Converter={StaticResource B2V}}">
+                <views:RouteChoiceControl/>
+            </Border>
+
+            <!-- 加入集合弹窗 -->
+            <Border Background="#22000000" MouseLeftButtonUp="ScrimClick" Tag="addcollection"
+                    Visibility="{Binding AddCollectionVisible, Converter={StaticResource B2V}}"/>
+            <Border Width="420" VerticalAlignment="Center" Style="{StaticResource Card}"
+                    Visibility="{Binding AddCollectionVisible, Converter={StaticResource B2V}}">
+                <views:AddToCollectionControl/>
+            </Border>
+
+            <!-- 备注编辑弹窗 -->
+            <Border Background="#22000000" MouseLeftButtonUp="ScrimClick" Tag="note"
+                    Visibility="{Binding NoteEditorVisible, Converter={StaticResource B2V}}"/>
+            <Border Width="420" VerticalAlignment="Center" Style="{StaticResource Card}"
+                    Visibility="{Binding NoteEditorVisible, Converter={StaticResource B2V}}">
+                <views:NoteEditorControl/>
+            </Border>
+
+            <!-- 快捷键速查 -->
+            <Border Background="#22000000" MouseLeftButtonUp="ScrimClick" Tag="shortcuts"
+                    Visibility="{Binding ShortcutsVisible, Converter={StaticResource B2V}}"/>
+            <Border Width="540" MaxHeight="460" VerticalAlignment="Center" Style="{StaticResource Card}"
+                    Visibility="{Binding ShortcutsVisible, Converter={StaticResource B2V}}">
+                <views:ShortcutsControl/>
+            </Border>
+
+            <!-- Toast -->
+            <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,28"
+                    Visibility="{Binding ToastVisible, Converter={StaticResource B2V}}">
+                <StackPanel Orientation="Horizontal">
+                    <Border Style="{StaticResource Card}" Padding="12,8" BorderBrush="{DynamicResource Brush.LineStrong}">
+                        <TextBlock Text="{Binding ToastMessage}" FontSize="12" Foreground="{DynamicResource Brush.Ink2}"
+                                   MaxWidth="420"/>
+                    </Border>
+                    <Button Content="{Binding UndoLabel}" Style="{StaticResource GhostButton}"
+                            Foreground="{DynamicResource Brush.Accent}"
+                            Visibility="{Binding ToastCanUndo, Converter={StaticResource B2V}}"
+                            Click="ToastUndo_Click" Margin="6,0,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
